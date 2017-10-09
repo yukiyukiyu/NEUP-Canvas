@@ -1,0 +1,116 @@
+<html>
+<head>
+	<title>Demo1</title>
+	<style type="text/css">
+		body{background-color:#0c1328; position:absolute; left:0; top:0; right:0; bottom:0;}
+	</style>
+</head>
+
+<body>
+	<canvas id="myCanvas">您的浏览器不支持Canvas.</canvas>
+	<script type="text/javascript">
+		(function(){
+			var canvas = {},
+				image = {};
+			canvas.obj = document.getElementById('myCanvas');
+			var particles = [];
+
+			if(canvas.obj.getContext){
+				canvas.ctx = canvas.obj.getContext('2d');
+				canvas.w = canvas.obj.width = document.body.clientWidth;
+				canvas.h = canvas.obj.height = document.body.clientHeight;
+				console.log(canvas);
+
+				var img = new Image();
+
+				img.onload = function(){
+					image.obj = img;
+					image.w = img.width;
+					image.h = img.height;
+					image.x = parseInt(canvas.w/2 - image.w/2);
+					image.y = 0;
+
+					canvas.ctx.drawImage(image.obj, image.x, image.y, image.w, image.h);
+					image.imageData = canvas.ctx.getImageData(image.x, image.y, image.w, image.h);
+
+					calculate();
+					draw();
+					
+				};
+
+				img.src = 'logo1.png';
+			}
+
+			function calculate(){
+				var len = image.imageData.length;
+				var cols = 150,
+					rows = 150;
+				var s_width = parseInt(image.w/rows),
+					s_height = parseInt(image.h/rows);
+				var pos = 0;
+				var par_x, par_y;
+				var data = image.imageData.data;
+
+				for(var i = 0; i < 150; i++)
+					for(var j = 0; j < 150; j++){
+						pos = (j*s_height*image.w+i*s_width)*4;
+						if(data[pos+3] > 100){
+							var particle = {
+								x0: canvas.w/2 + 70,
+								y0: canvas.h/2 - 25,
+								x1: canvas.w / 2 - image.w / 2 + i * s_width + (Math.random() - 0.5) * 10,
+								y1: j * s_height + (Math.random() - 0.5) * 10 + 120,
+								count: 0,
+								delay: j / 20,
+								currTime: 0,
+								duration: parseInt(2000 / 16.66) + 1,
+								interval: parseInt(Math.random() * 10 * 10),
+								fillStyle: '#66ccff'
+							}
+							particles.push(particle);
+						}
+					}
+			}
+
+			Math.easeInOutExpo = function (e, a, g, f) {
+				return g * (-Math.pow(2, -10 * e / f) + 1) + a
+			}
+
+			function draw(){
+				canvas.ctx.clearRect(0, 0, canvas.w, canvas.h);
+				var len = particles.length;
+				var cur_particle = null;
+				var cur_x, cur_y;
+				var cur_time = 0, duration = 0, cur_delay = 0;
+				for(var i = 0; i < len; i++){
+					cur_particle = particles[i];
+					if(cur_particle.count++ > cur_particle.delay) {
+						canvas.ctx.fillStyle = cur_particle.fillStyle;
+						cur_time = cur_particle.currTime;
+						duration = cur_particle.duration;
+						cur_delay = cur_particle.interval;
+						if(particles[len - 1].duration + particles[len - 1].interval < particles[len - 1].currTime / 2) {
+							cancelAnimationFrame(requestId);
+							var a = null;
+							for(var c = 0; c < len; c++) {
+								a = particles[c];
+								canvas.ctx.filStyle = a.fillStyle;
+								canvas.ctx.fillRect(a.x1, a.y1, 1, 1);
+							}
+							return;
+						} else if(cur_time < duration + cur_delay) {
+							cur_x = Math.easeInOutExpo(cur_time-cur_delay, cur_particle.x0, cur_particle.x1 - cur_particle.x0, duration);
+							cur_y = Math.easeInOutExpo(cur_time-cur_delay, cur_particle.y0, cur_particle.y1 - cur_particle.y0, duration);
+							canvas.ctx.fillRect(cur_x, cur_y, 1, 1);
+						} else {
+							canvas.ctx.fillRect(cur_particle.x1, cur_particle.y1, 1, 1);
+						}
+						cur_particle.currTime += Math.random() + 0.5;
+					}
+				}
+				requestId = requestAnimationFrame(draw);
+			}
+		}())
+	</script>
+</body>
+</html>
